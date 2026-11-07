@@ -3,20 +3,26 @@
 # Prepare OctoPrint
 # s6-overlay docs: https://github.com/just-containers/s6-overlay
 # ==============================================================================
-export BASEDIR="--basedir /data/config/octoprint"
+set -e
 
-{ # Check if OctoPrint is installed.
-    octoprint $BASEDIR --version
-} || { # Otherwise install it.
-    { # Check if Python is available (at `/data/python/octoprint`, set by PATH in Dockerfile)
-        python --version
-    } || { # Otherwise create Python virtual environment.
-        python3 -m venv /data/python/octoprint
-        # Install wheel to speed up future installs.
-        pip install wheel
-    }
-    pip install octoprint==$OCTOPRINT_VERSION
-}
+export BASEDIR="--basedir /data/config/octoprint"
+VENV=/data/python/octoprint
+
+if [ -d "$VENV" ] && ! "$VENV/bin/python" -c \
+    'import sys; raise SystemExit(sys.version_info[:2] != (3, 11))' 2>/dev/null; then
+    bashio::log.warning "Preserving the old Python environment; plugins may need reinstalling."
+    mv "$VENV" "${VENV}.previous-$(date +%s)"
+fi
+
+if [ ! -x "$VENV/bin/python" ]; then
+    bashio::log.info "Creating the persistent OctoPrint Python environment."
+    python3 -m venv "$VENV"
+fi
+
+bashio::log.info "Installing OctoPrint ${OCTOPRINT_VERSION} from bundled wheels (no download required)."
+"$VENV/bin/python" -m pip install --quiet --no-index \
+    --find-links /opt/octoprint-wheels "OctoPrint==${OCTOPRINT_VERSION}" wheel
+"$VENV/bin/octoprint" --version
 
 # Create initial OctoPrint config, if missing.
 if [ ! -f /data/config/octoprint/config.yaml ]; then

@@ -5,12 +5,16 @@
 	{{ if .camera_url }}
 	handle_path /camera* {
 		reverse_proxy {{ .camera_url }} {
+			{{ if .trusted_proxies }}
 			trusted_proxies {{ .trusted_proxies }}
+			{{ end }}
 			flush_interval -1
 		}
 	}
 	{{ end }}
 	reverse_proxy http://127.0.0.1:80 {
+		{{ if .trusted_proxies }}
 		trusted_proxies {{ .trusted_proxies }}
+		{{ end }}
 	}
 }

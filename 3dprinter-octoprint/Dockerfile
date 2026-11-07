@@ -1,27 +1,14 @@
-ARG BUILD_FROM="ghcr.io/home-assistant/amd64-base-debian:bullseye"
+ARG BUILD_FROM="ghcr.io/home-assistant/amd64-base-debian:bookworm"
 FROM ${BUILD_FROM}
-ARG OCTOPRINT_VERSION="1.9.3"
+ARG OCTOPRINT_VERSION="1.11.8"
 
 # Setup path for persistent install of Python packages
-ENV PYTHONPATH=/data/python/octoprint
-ENV PYTHONUSERBASE=/data/python/octoprint
 ENV PATH=/data/python/octoprint/bin:${PATH}
 ENV OCTOPRINT_VERSION=${OCTOPRINT_VERSION}
 
-# Preparation for install of Caddy
-RUN apt update \
-    && apt install -y \
-    --no-install-recommends \
-    debian-keyring \
-    debian-archive-keyring \
-    apt-transport-https \
-    gpg \
-    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
-    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
-
 # Install dependencies
-RUN apt update \
-    && apt install -y \
+RUN apt-get update \
+    && apt-get install -y \
         --no-install-recommends \
         python3-venv \
         python3-dev \
@@ -38,15 +25,20 @@ RUN apt update \
         # Development/testing
         vim \
     && \
-    apt clean
+    rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /tmp/octoprint-build \
+    && /tmp/octoprint-build/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && /tmp/octoprint-build/bin/python -m pip wheel --no-cache-dir \
+        --wheel-dir /opt/octoprint-wheels "OctoPrint==${OCTOPRINT_VERSION}" wheel \
+    && /tmp/octoprint-build/bin/python -m pip install --no-index \
+        --find-links /opt/octoprint-wheels "OctoPrint==${OCTOPRINT_VERSION}" wheel \
+    && /tmp/octoprint-build/bin/python -m pip check \
+    && /tmp/octoprint-build/bin/octoprint --version \
+    && rm -rf /tmp/octoprint-build
 
 # Copy root filesystem
 COPY rootfs /
 RUN chmod +x /etc/cont-init.d/*.sh
 RUN chmod +x /etc/services.d/*/*
 RUN chmod +x /scripts/*.sh
-
-# Test install, verify that install will be possible.
-RUN sed 's/#!/# #!/' /etc/cont-init.d/octoprint.sh > /tmp/octoprint.sh 
-RUN bash /tmp/octoprint.sh \
-    && rm -rf /data/* /tmp/*

@@ -4,6 +4,8 @@
 # Configures proxy
 # ==============================================================================
 
+set -e
+
 # Generate proxy configuration for internal and external access
 bashio::var.json \
     addon_hostname "$(bashio::addon.hostname)" \
@@ -32,3 +34,4 @@ bashio::var.json \
 
 # Make sure config is correctly formatted.
 caddy fmt --overwrite /etc/caddy/Caddyfile
+caddy validate --config /etc/caddy/Caddyfile

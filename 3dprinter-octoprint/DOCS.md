@@ -1,6 +1,20 @@
 # Startup
 
-Set a network port in add-on settings to be able to access the WebUI.
+The WebUI is available on port 5000 by default. Use **Open Web UI** or visit
+`http://<home-assistant-host>:5000` after starting the add-on.
+
+For an existing installation, enable `5000/tcp` in the add-on's Network settings
+if it is still disabled. Updates preserve existing network settings.
+
+OctoPrint and its dependencies are bundled in the image and installed offline
+into persistent storage on startup. A Python version change preserves the old
+environment under `/data/python/octoprint.previous-<timestamp>`; third-party
+plugins may need reinstalling. OctoPrint settings and printer profiles remain
+in `/data/config/octoprint`.
+
+When switching from the upstream repository to this fork, Home Assistant treats
+it as a separate add-on. Back up the old add-on before migrating; do not uninstall
+it until the new installation and any restored OctoPrint backup are verified.
 
 # Add-on configuration
 
