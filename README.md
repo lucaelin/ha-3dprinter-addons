@@ -10,6 +10,16 @@ You can use the following button to add the repository to your Home Assistant in
 
 ## Addons
 
+## Publishing OctoPrint images
+
+The **Build OctoPrint** workflow builds and publishes architecture-specific images
+when OctoPrint files change on `main`, or when run manually from GitHub Actions.
+
+After the first publish, set each `ha-addon-3dprinter-octoprint-*` container
+package's visibility to **Public** in its GitHub package settings. A public source
+repository does not automatically make its container packages public. Home
+Assistant must be able to pull the images without GitHub credentials.
+
 ### 3DPrinter-OctoPrint
 
 OctoPrint, plain and simple.
